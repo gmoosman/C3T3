@@ -1,0 +1,285 @@
+<html>
+
+	<head>
+
+		<script src="http://d3js.org/d3.v3.min.js"></script>
+		<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+
+		<style>
+
+        		h1 {
+            color: #ffffff;
+            font-family:'Raleway';
+            font-weight: normal;
+            font-size: 1.75em;
+            letter-spacing: .2em;
+            line-height: 1.1em;
+            margin:0px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        #container {
+            width:810px;
+            height:600px;
+            background: #1abc9c;
+        }
+        #header {
+            width:800px;
+            height: 50px;
+            padding: 5px;
+            background: #1abc9c;
+        }
+        #sidebar {
+            height:400px;
+            width:170px;
+            background: #1abc9c;
+            float:left;
+            font-family:'Raleway';
+            font-size: 11px;
+            padding: 5px;
+        }
+        #content {
+            background-color:#ffffff;
+            height:400px;
+            width:450px;
+            float:left;
+        }
+        #footer {
+            width:630px;
+            height: 50px;
+            font-family:'Raleway';
+            font-size: 11px;
+            background: #1abc9c;
+            float:left;
+            padding: 5px;
+            text-align: right;
+        }
+        circle {
+            stroke: #1abc9c;
+            stroke-width: 2;
+            fill: white;
+        }
+        .d3-tip {
+            font-family:'Raleway';
+            line-height: 1;
+            padding: 1px;
+            background: transparent;
+            color: #000;
+            border-radius: 2px;
+        }
+        .axis path, .axis line {
+            fill: none;
+            stroke: grey;
+            shape-rendering: crispEdges;
+        }
+        .axis text {
+            font-family:'Raleway';
+            font-size: 11px;
+        }
+        select, button {
+            margin: 5px;
+            font-family:'Raleway' font-size: 20px;
+        }
+
+		</style
+
+	</head>
+
+	<body>
+
+    <div id="container">
+        <div id="header">
+             <h1>Demo Scatterplot</h1>
+
+        </div>
+        <div id="sidebar">X-axis:
+            <select id="xAxisVar" onchange="reDraw()">
+                <option></option>
+                <option value="physicalstrength" selected="selected">physical strength</option>
+                <option value="fearfactor">fear factor</option>
+                <option value="killingpower">killing power</option>
+                <option value="horrorrating">horror rating</option>
+            </select>
+        </div>
+        <div id="content">
+            <svg height="400" width="650"></svg>
+        </div>
+        <div id="footer">Y-axis:
+            <select id="yAxisVar" onchange="reDraw()">
+                <option></option>
+                <option value="physicalstrength">physical strength</option>
+                <option value="fearfactor" selected="selected">fear factor</option>
+                <option value="killingpower">killing power</option>
+                <option value="horrorrating">horror rating</option>
+            </select>
+        </div>
+    </div>
+     </div>
+
+		<script>
+
+        		//Set up the data
+        horror = [{
+            "name": "ape man",
+                "physicalstrength": 20,
+                "fearfactor": 7,
+                "killingpower": 12,
+                "horrorrating": 4,
+                "cluster": 1
+
+        }, {
+            "name": "godzilla",
+                "physicalstrength": 3,
+                "fearfactor": 5,
+                "killingpower": 4,
+                "horrorrating": 8,
+                "cluster": 2
+
+        }, {
+            "name": "the ghoul",
+                "physicalstrength": 7,
+                "fearfactor": 12,
+                "killingpower": 2,
+                "horrorrating": 7,
+                "cluster": 1
+
+        }, {
+            "name": "the freak",
+                "physicalstrength": 9,
+                "fearfactor": 2,
+                "killingpower": 1,
+                "horrorrating": 17,
+                "cluster": 1
+
+        }, {
+            "name": "dracula",
+                "physicalstrength": 4,
+                "fearfactor": 17,
+                "killingpower": 5,
+                "horrorrating": 16,
+                "cluster": 2
+
+        }, {
+            "name": "the hangman",
+                "physicalstrength": 2,
+                "fearfactor": 4,
+                "killingpower": 13,
+                "horrorrating": 8,
+                "cluster": 2
+
+        }, {
+            "name": "incredible melting man",
+                "physicalstrength": 3,
+                "fearfactor": 8,
+                "killingpower": 15,
+                "horrorrating": 6,
+                "cluster": 1
+
+        }, {
+            "name": "the thing",
+                "physicalstrength": 19,
+                "fearfactor": 4,
+                "killingpower": 11,
+                "horrorrating": 7,
+                "cluster": 1
+
+        }];
+
+        //Set constants
+
+        var w = 420,
+            h = 400,
+            padding = 30;
+
+        //Create adaptable scales
+
+        var xScale = d3.scale.linear()
+            .domain([0, d3.max(horror, function (d) {
+            return d3.max([d.physicalstrength, d.fearfactor, d.killingpower, d.horrorrating]);
+        })])
+            .range([padding, w - padding]);
+
+        var yScale = d3.scale.linear()
+            .domain([0, d3.max(horror, function (d) {
+            return d3.max([d.physicalstrength, d.fearfactor, d.killingpower, d.horrorrating]);
+        })])
+            .range([h - padding, padding]);
+
+        //Select the svg
+        var svg = d3.select("svg");
+
+        //Define and set up the tooltip
+        var tip = d3.tip()
+            .attr('class', 'd3-tip')
+            .offset([-10, 0])
+            .html(function (d) {
+            return d.name;
+        });
+
+        svg.call(tip);
+
+        //Set up the circles
+        diag_circles = svg.selectAll("circle");
+
+        diag_circles.data(horror)
+            .enter()
+            .append("circle")
+            .attr("cx", function (d) {
+            return xScale(d.physicalstrength)
+        })
+            .attr("cy", function (d) {
+            return yScale(d.fearfactor)
+        })
+            .attr("r", 10)
+            .style("stroke", function (d) {
+            if (d.cluster === 1) {
+                return "#1abc9c";
+            } else {
+                return "gray";
+            }
+        })
+            .on('mouseover', tip.show)
+            .on('mouseout', tip.hide);
+
+        //Set up the axes
+
+        var xAxis = d3.svg.axis()
+            .scale(xScale)
+            .orient("bottom");
+
+        var yAxis = d3.svg.axis()
+            .scale(yScale)
+            .orient("left");
+
+        svg.append("g")
+            .attr("class", "axis")
+            .attr("transform", "translate(0," + (h - padding) + ")")
+            .call(xAxis);
+
+        svg.append("g")
+            .attr("class", "axis")
+            .attr("transform", "translate(" + padding + ",0)")
+            .call(yAxis);
+
+        function reDraw() {
+            console.log('hi');
+            xVar = document.getElementById('xAxisVar').value;
+            yVar = document.getElementById('yAxisVar').value;
+
+            d3.selectAll("circle")
+                .transition()
+                .duration(1000)
+                .attr("cx", function (d) {
+                return eval("xScale(d." + xVar + ");");
+            })
+                .attr("cy", function (d) {
+                return eval("yScale(d." + yVar + ");");
+            });
+
+        }
+
+		</script>
+
+	</body>
+
+</html>
